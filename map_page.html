@@ -273,69 +273,124 @@
       filter: invert(100%) hue-rotate(190deg) brightness(85%) contrast(120%);
     }
 
-    /* ── Radar Sweep & Laser Animation ─────────────────────── */
-    .scan-line {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--cyan-neon), transparent);
-      box-shadow: 0 0 20px var(--cyan-neon), 0 0 10px var(--cyan-neon);
-      z-index: 1000;
-      pointer-events: none;
-      display: none;
-    }
-
-    .radar-overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 320px;
-      height: 320px;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 1px solid rgba(0, 242, 254, 0.4);
-      box-shadow: 0 0 30px rgba(0, 242, 254, 0.2);
-      pointer-events: none;
-      z-index: 999;
-      display: none;
-    }
-
-    .radar-overlay::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 200px;
-      height: 200px;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 1px dashed rgba(0, 242, 254, 0.5);
-    }
-
-    .radar-overlay::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 80px;
-      height: 80px;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 1px solid rgba(255, 0, 85, 0.6);
-      background: rgba(255, 0, 85, 0.05);
-    }
-
-    .radar-sweep-line {
+    /* ── Full Map Scanning & Magnifying Glass Overlay Styles ───── */
+    .global-scan-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      z-index: 2000;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(5, 10, 20, 0.85) 100%);
+      display: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      overflow: hidden;
+    }
+
+    .global-scan-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .scan-grid-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(0, 242, 254, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 254, 0.08) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridPulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes gridPulse {
+      0% { opacity: 0.3; }
+      100% { opacity: 0.85; }
+    }
+
+    /* Corner HUD Brackets */
+    .hud-corner {
+      position: absolute;
+      padding: 8px 12px;
+      font-family: var(--font-code);
+      font-size: 0.68rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      pointer-events: none;
+      text-transform: uppercase;
+      z-index: 2010;
+    }
+    .hud-corner.top-left { top: 12px; left: 12px; border-top: 2px solid var(--cyan-neon); border-left: 2px solid var(--cyan-neon); }
+    .hud-corner.top-right { top: 12px; right: 12px; border-top: 2px solid var(--cyan-neon); border-right: 2px solid var(--cyan-neon); text-align: right; }
+    .hud-corner.bottom-left { bottom: 12px; left: 12px; border-bottom: 2px solid var(--cyan-neon); border-left: 2px solid var(--cyan-neon); }
+    .hud-corner.bottom-right { bottom: 12px; right: 12px; border-bottom: 2px solid var(--cyan-neon); border-right: 2px solid var(--cyan-neon); text-align: right; }
+
+    .hud-tag { font-weight: 700; text-shadow: 0 0 8px rgba(0, 242, 254, 0.6); }
+
+    /* Dual Laser Scanning Beams */
+    .laser-beam-x {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--cyan-neon), #0077ff, transparent);
+      box-shadow: 0 0 20px var(--cyan-neon), 0 0 10px #0077ff;
+      animation: sweepY 2.2s ease-in-out infinite alternate;
+      z-index: 2005;
+    }
+
+    .laser-beam-y {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(180deg, transparent, var(--cyan-neon), #0077ff, transparent);
+      box-shadow: 0 0 20px var(--cyan-neon), 0 0 10px #0077ff;
+      animation: sweepX 2.8s ease-in-out infinite alternate;
+      z-index: 2005;
+    }
+
+    @keyframes sweepY {
+      0% { top: 0%; }
+      100% { top: 100%; }
+    }
+
+    @keyframes sweepX {
+      0% { left: 0%; }
+      100% { left: 100%; }
+    }
+
+    .radar-scan-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 280px;
+      height: 280px;
+      transform: translate(-50%, -50%);
       border-radius: 50%;
-      background: conic-gradient(from 0deg, rgba(0, 242, 254, 0.4) 0deg, transparent 60deg, transparent 360deg);
-      animation: radarRotate 2s linear infinite;
+      border: 1px solid rgba(0, 242, 254, 0.5);
+      box-shadow: 0 0 35px rgba(0, 242, 254, 0.3), inset 0 0 30px rgba(0, 242, 254, 0.15);
+      z-index: 2004;
+    }
+
+    .radar-scan-line {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, rgba(0, 242, 254, 0.5) 0deg, transparent 70deg, transparent 360deg);
+      animation: radarRotate 1.8s linear infinite;
+    }
+
+    .radar-ping-ring {
+      position: absolute;
+      top: 50%; left: 50%; width: 10px; height: 10px;
+      transform: translate(-50%, -50%);
+      border: 2px solid var(--cyan-neon);
+      border-radius: 50%;
+      animation: pulseExpand 1.8s ease-out infinite;
     }
 
     @keyframes radarRotate {
@@ -343,21 +398,161 @@
       to { transform: rotate(360deg); }
     }
 
-    .pulse-ring {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 20px;
-      height: 20px;
-      transform: translate(-50%, -50%);
-      border: 2px solid var(--crimson-danger);
-      border-radius: 50%;
-      animation: pulseExpand 1.5s ease-out infinite;
-    }
-
     @keyframes pulseExpand {
       0% { width: 10px; height: 10px; opacity: 1; }
-      100% { width: 160px; height: 160px; opacity: 0; }
+      100% { width: 220px; height: 220px; opacity: 0; }
+    }
+
+    .scan-status-banner {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(7, 10, 16, 0.92);
+      border: 1px solid var(--cyan-neon);
+      padding: 8px 22px;
+      border-radius: 20px;
+      font-family: var(--font-code);
+      font-size: 0.78rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1.5px;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 2010;
+    }
+
+    /* ── Magnifying Glass Lens Overlay ───────────────────────── */
+    .magnifier-glass {
+      position: absolute;
+      width: 170px;
+      height: 170px;
+      z-index: 2500;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      display: none;
+    }
+
+    .magnifier-glass.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .glass-lens {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid var(--cyan-neon);
+      background: radial-gradient(circle at 35% 35%, rgba(0, 242, 254, 0.3) 0%, rgba(5, 10, 20, 0.82) 75%);
+      box-shadow: 
+        0 0 30px rgba(0, 242, 254, 0.8),
+        0 0 60px rgba(0, 119, 255, 0.4),
+        inset 0 0 25px rgba(0, 242, 254, 0.4);
+      backdrop-filter: blur(2px);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Glass handle sticking out diagonally */
+    .glass-handle {
+      position: absolute;
+      bottom: -42px;
+      right: -24px;
+      width: 12px;
+      height: 75px;
+      background: linear-gradient(135deg, var(--cyan-neon) 0%, #0066ff 60%, #070a10 100%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 6px;
+      transform: rotate(-45deg);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
+    }
+
+    .glass-handle::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 3px;
+      width: 4px;
+      height: 35px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 2px;
+    }
+
+    /* Lens Optics Elements */
+    .lens-crosshair-h {
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      background: rgba(0, 242, 254, 0.6);
+      box-shadow: 0 0 6px var(--cyan-neon);
+    }
+
+    .lens-crosshair-v {
+      position: absolute;
+      height: 100%;
+      width: 1px;
+      background: rgba(0, 242, 254, 0.6);
+      box-shadow: 0 0 6px var(--cyan-neon);
+    }
+
+    .lens-target-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--crimson-danger);
+      box-shadow: 0 0 12px var(--crimson-danger), 0 0 24px var(--crimson-danger);
+      animation: targetPulse 0.8s infinite alternate;
+    }
+
+    @keyframes targetPulse {
+      0% { transform: scale(0.8); opacity: 0.7; }
+      100% { transform: scale(1.4); opacity: 1; }
+    }
+
+    .lens-ring-outer {
+      position: absolute;
+      width: 75%;
+      height: 75%;
+      border-radius: 50%;
+      border: 1.5px dashed var(--cyan-neon);
+      animation: radarRotate 4s linear infinite;
+    }
+
+    .lens-glare {
+      position: absolute;
+      top: 10%;
+      left: 15%;
+      width: 70%;
+      height: 35%;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, transparent 100%);
+      transform: rotate(-30deg);
+      pointer-events: none;
+    }
+
+    .lens-hud-info {
+      position: absolute;
+      bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: var(--font-code);
+      font-size: 0.62rem;
+      color: var(--cyan-neon);
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 0 6px rgba(0, 242, 254, 0.8);
+      background: rgba(0, 0, 0, 0.65);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 242, 254, 0.3);
     }
 
     /* ── Side Panel HUD ───────────────────────────────────── */
@@ -562,13 +757,50 @@
   <!-- Main Display Grid -->
   <div class="main-container">
     <!-- Interactive Map Frame -->
-    <div class="map-frame">
-      <div id="scan-line" class="scan-line"></div>
-      
-      <!-- Radar Overlay Animation -->
-      <div id="radar-overlay" class="radar-overlay">
-        <div class="radar-sweep-line"></div>
-        <div class="pulse-ring"></div>
+    <div class="map-frame" id="map-frame">
+      <!-- Full Map Reconnaissance Scan Overlay -->
+      <div id="global-scan-overlay" class="global-scan-overlay">
+        <div class="scan-grid-pattern"></div>
+        <div class="hud-corner top-left">
+          <div class="hud-tag">RECON GRID 01</div>
+        </div>
+        <div class="hud-corner top-right">
+          <div class="hud-tag">SYSTEM STATUS: FULL MAP SCAN</div>
+        </div>
+        <div class="hud-corner bottom-left">
+          <div class="hud-tag" id="scan-ticker-coords">COORDS: 0.0000, 0.0000</div>
+        </div>
+        <div class="hud-corner bottom-right">
+          <div class="hud-tag">MODE: SATELLITE TRIANGULATION</div>
+        </div>
+        
+        <div class="laser-beam-x"></div>
+        <div class="laser-beam-y"></div>
+        
+        <div class="radar-scan-circle">
+          <div class="radar-scan-line"></div>
+          <div class="radar-ping-ring"></div>
+        </div>
+        
+        <div class="scan-status-banner">
+          <i class="fa-solid fa-radar fa-spin"></i> INITIALIZING GLOBAL MAP RECONNAISSANCE SCAN...
+        </div>
+      </div>
+
+      <!-- High-Precision Magnifying Glass Lens Overlay -->
+      <div id="magnifier-glass" class="magnifier-glass">
+        <div class="glass-lens">
+          <div class="lens-crosshair-h"></div>
+          <div class="lens-crosshair-v"></div>
+          <div class="lens-target-dot"></div>
+          <div class="lens-ring-outer"></div>
+          <div class="lens-glare"></div>
+          <div class="lens-hud-info">
+            <span id="lens-zoom-text">OPTICAL MAG: 1.0X</span>
+            <span id="lens-target-text">LOCKING TELEMETRY</span>
+          </div>
+        </div>
+        <div class="glass-handle"></div>
       </div>
 
       <div id="map"></div>
@@ -629,6 +861,8 @@
 
   <script>
     let map, marker, currentTargetData = null;
+    let tickerInterval = null;
+    let animFrameId = null;
 
     // Initialize Map
     function initMap() {
@@ -648,42 +882,6 @@
       entry.innerHTML = `> ${text}`;
       logElement.appendChild(entry);
       logElement.scrollTop = logElement.scrollHeight;
-    }
-
-    function triggerScanEffects() {
-      const scanLine = document.getElementById('scan-line');
-      const radarOverlay = document.getElementById('radar-overlay');
-      const statusDot = document.getElementById('status-dot');
-      const statusText = document.getElementById('status-text');
-
-      scanLine.style.display = 'block';
-      radarOverlay.style.display = 'block';
-      statusText.textContent = 'SCANNING & TRACING...';
-      statusDot.style.background = 'var(--amber-warn)';
-      statusDot.style.boxShadow = '0 0 10px var(--amber-warn)';
-
-      let position = 0;
-      const duration = 2200;
-      const startTime = performance.now();
-      const mapHeight = document.getElementById('map').offsetHeight;
-
-      function step(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        position = progress * mapHeight;
-        scanLine.style.top = `${position}px`;
-
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        } else {
-          scanLine.style.display = 'none';
-          radarOverlay.style.display = 'none';
-          statusText.textContent = 'TARGET LOCKED';
-          statusDot.style.background = 'var(--green-safe)';
-          statusDot.style.boxShadow = '0 0 10px var(--green-safe)';
-        }
-      }
-      requestAnimationFrame(step);
     }
 
     async function fetchIpGeolocation(ip) {
@@ -747,51 +945,31 @@
       }
     }
 
-    async function traceIP(customIp = null) {
-      const ip = customIp || document.getElementById('ip-input').value.trim();
-      if (!ip) return;
-
-      document.getElementById('ip-input').value = ip;
-      triggerScanEffects();
-
-      const geo = await fetchIpGeolocation(ip);
-      currentTargetData = geo;
-
-      // Update HUD fields
-      document.getElementById('val-ip').textContent = geo.ip;
-      document.getElementById('val-coords').textContent = `${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}`;
-      document.getElementById('val-location').textContent = `${geo.city}, ${geo.country}`;
-      document.getElementById('val-isp').textContent = geo.isp;
-      document.getElementById('val-status').textContent = 'UNVERIFIED SUSPECT RELAY (MITM)';
-
-      // Pan & Zoom Map smoothly
-      map.flyTo([geo.lat, geo.lon], 6, { duration: 2.2 });
-
+    function createMarkerAndPopup(geo) {
       if (marker) map.removeLayer(marker);
 
-      // Create Custom Animated Glowing Marker
       const customIcon = L.divIcon({
         className: 'custom-radar-marker',
         html: `
           <div style="
-            width: 24px; height: 24px;
+            width: 26px; height: 26px;
             background: #ff0055;
             border: 3px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 20px #ff0055, 0 0 10px #ff0055;
+            box-shadow: 0 0 25px #ff0055, 0 0 12px #ff0055;
             position: relative;
           ">
             <div style="
               position: absolute; top:-12px; left:-12px;
-              width: 42px; height: 42px;
+              width: 46px; height: 46px;
               border: 2px solid #ff0055;
               border-radius: 50%;
-              animation: pulseExpand 1.6s infinite;
+              animation: pulseExpand 1.5s infinite;
             "></div>
           </div>
         `,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
       });
 
       marker = L.marker([geo.lat, geo.lon], { icon: customIcon }).addTo(map);
@@ -814,7 +992,143 @@
       `;
 
       marker.bindPopup(popupContent).openPopup();
-      appendLog(`Target device position locked: <strong>${geo.city}, ${geo.country} (${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)})</strong>`, 'log-alert');
+    }
+
+    async function traceIP(customIp = null) {
+      const ip = customIp || document.getElementById('ip-input').value.trim();
+      if (!ip) return;
+
+      document.getElementById('ip-input').value = ip;
+
+      // Reset active loops/timeouts
+      if (tickerInterval) clearInterval(tickerInterval);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+
+      const statusDot = document.getElementById('status-dot');
+      const statusText = document.getElementById('status-text');
+      const globalScanOverlay = document.getElementById('global-scan-overlay');
+      const magnifierGlass = document.getElementById('magnifier-glass');
+      const tickerCoords = document.getElementById('scan-ticker-coords');
+      const lensZoomText = document.getElementById('lens-zoom-text');
+      const lensTargetText = document.getElementById('lens-target-text');
+
+      // Reset map view to global world view for scanning phase
+      map.setView([20, 0], 2, { animate: false });
+      if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+      }
+      magnifierGlass.classList.remove('active');
+
+      // Status Indicator
+      statusText.textContent = 'FULL MAP SCANNING...';
+      statusDot.style.background = 'var(--amber-warn)';
+      statusDot.style.boxShadow = '0 0 10px var(--amber-warn)';
+
+      // PHASE 1: Activate Full Map Scan Animation Overlay
+      globalScanOverlay.classList.add('active');
+      appendLog(`[1/3] Launching Global Map Reconnaissance Scan...`, 'log-info');
+      appendLog(`Scanning global satellite relays for IP <strong>${ip}</strong>...`, 'log-info');
+
+      // Random Coordinate Ticker in corner HUD
+      tickerInterval = setInterval(() => {
+        const rLat = (Math.random() * 160 - 80).toFixed(4);
+        const rLon = (Math.random() * 360 - 180).toFixed(4);
+        if (tickerCoords) tickerCoords.textContent = `COORDS: ${rLat}, ${rLon}`;
+      }, 65);
+
+      // Fetch Geolocation asynchronously while scan animation plays
+      const geoPromise = fetchIpGeolocation(ip);
+
+      // Scan duration (2.2 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2200));
+
+      clearInterval(tickerInterval);
+      const geo = await geoPromise;
+      currentTargetData = geo;
+
+      if (tickerCoords) tickerCoords.textContent = `TARGET LOCKED: ${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}`;
+
+      // Update side panel telemetry HUD
+      document.getElementById('val-ip').textContent = geo.ip;
+      document.getElementById('val-coords').textContent = `${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}`;
+      document.getElementById('val-location').textContent = `${geo.city}, ${geo.country}`;
+      document.getElementById('val-isp').textContent = geo.isp;
+      document.getElementById('val-status').textContent = 'UNVERIFIED SUSPECT RELAY (MITM)';
+
+      appendLog(`[2/3] Target acquired at <strong>${geo.city}, ${geo.country}</strong>. Deploying Magnifying Glass Zoom...`, 'log-warn');
+
+      // Fade out full map scan overlay
+      globalScanOverlay.classList.remove('active');
+
+      // PHASE 2: Magnifying Glass Lens Zoom-In Animation
+      const mapContainer = document.getElementById('map-frame');
+      const mapWidth = mapContainer.clientWidth;
+      const mapHeight = mapContainer.clientHeight;
+
+      // Center Magnifying Glass initially over the map frame
+      magnifierGlass.style.left = `${mapWidth / 2}px`;
+      magnifierGlass.style.top = `${mapHeight / 2}px`;
+      magnifierGlass.style.transform = 'translate(-50%, -50%) scale(0.2)';
+      magnifierGlass.classList.add('active');
+
+      // Expand lens smoothly
+      setTimeout(() => {
+        magnifierGlass.style.transform = 'translate(-50%, -50%) scale(1.05)';
+      }, 40);
+
+      // Start Leaflet smooth flyTo zoom down to city level
+      const zoomDuration = 2.4; // seconds
+      map.flyTo([geo.lat, geo.lon], 13, {
+        duration: zoomDuration,
+        easeLinearity: 0.25
+      });
+
+      // Dynamically track target location on screen as map pans and zooms
+      const startTime = performance.now();
+
+      function animateMagnifier(currentTime) {
+        const elapsed = (currentTime - startTime) / 1000;
+        const progress = Math.min(elapsed / zoomDuration, 1);
+
+        // Convert lat/lon coordinates to container pixel coordinates
+        const targetContainerPoint = map.latLngToContainerPoint([geo.lat, geo.lon]);
+        
+        // Position magnifying glass over the target coordinates
+        magnifierGlass.style.left = `${targetContainerPoint.x}px`;
+        magnifierGlass.style.top = `${targetContainerPoint.y}px`;
+
+        // Update lens HUD magnification scale
+        const magFactor = (1.0 + progress * 17.0).toFixed(1);
+        if (lensZoomText) lensZoomText.textContent = `OPTICAL MAG: ${magFactor}X`;
+        if (lensTargetText) lensTargetText.textContent = progress < 0.7 ? 'ZOOMING LOCATION...' : 'LOCKING TARGET...';
+
+        if (progress < 1) {
+          animFrameId = requestAnimationFrame(animateMagnifier);
+        } else {
+          // PHASE 3: Pulse & Fade Out Magnifying Glass, Lock Pin & Open Popup
+          magnifierGlass.style.transform = 'translate(-50%, -50%) scale(1.35)';
+
+          setTimeout(() => {
+            magnifierGlass.style.transform = 'translate(-50%, -50%) scale(0)';
+            setTimeout(() => {
+              magnifierGlass.classList.remove('active');
+            }, 300);
+
+            // Drop Marker onto map and open popup
+            createMarkerAndPopup(geo);
+
+            // Update status HUD
+            statusText.textContent = 'TARGET LOCKED';
+            statusDot.style.background = 'var(--green-safe)';
+            statusDot.style.boxShadow = '0 0 10px var(--green-safe)';
+
+            appendLog(`[3/3] [LOCK CONFIRMED] Target device position locked: <strong>${geo.city}, ${geo.country} (${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)})</strong>`, 'log-alert');
+          }, 300);
+        }
+      }
+
+      animFrameId = requestAnimationFrame(animateMagnifier);
     }
 
     function setAndTrace(ip) {
