@@ -1,4 +1,7 @@
+const mongoose = require("mongoose");
 const IOC = require("../models/IOC");
+const Email = require("../models/Email");
+const Case = require("../models/Case");
 const Relationship = require("../models/Relationship");
 const normalizeIOC = require("../utils/normalizeIOC");
 
@@ -69,6 +72,7 @@ exports.getAllIOCs = async (req, res, next) => {
     const { type, value, emailId, caseId, status, page, limit } = req.query;
 
     const filter = {};
+    const andFilters = [];
 
     // Filter by IOC type (ip, domain, url, email, hash)
     if (type) filter.type = type;
@@ -78,23 +82,76 @@ exports.getAllIOCs = async (req, res, next) => {
 
     // Filter by value — partial match (e.g. ?value=attack)
     if (value) {
-      filter.$or = [
-        { normalizedValue: { $regex: value.toLowerCase(), $options: "i" } },
-        { value: { $regex: value, $options: "i" } },
-      ];
+      andFilters.push({
+        $or: [
+          { normalizedValue: { $regex: value.toLowerCase(), $options: "i" } },
+          { value: { $regex: value, $options: "i" } },
+        ],
+      });
     }
 
-    // Filter by source email ID
+    // Filter by email ID (supports MongoDB _id or email_id string)
     if (emailId) {
-      filter["investigation.relatedEmails"] = emailId;
+      const emailMatches = [];
+
+      // If valid ObjectId, directly match sourceEmailId or relatedEmails
+      if (mongoose.Types.ObjectId.isValid(emailId)) {
+        const objId = new mongoose.Types.ObjectId(emailId);
+        emailMatches.push({ sourceEmailId: objId });
+        emailMatches.push({ "investigation.relatedEmails": objId });
+      }
+
+      // Also try resolving email by email_id string (or _id) in Email collection
+      const emailDoc = await Email.findOne({
+        $or: [
+          ...(mongoose.Types.ObjectId.isValid(emailId) ? [{ _id: emailId }] : []),
+          { email_id: emailId },
+        ],
+      }).select("_id");
+
+      if (emailDoc) {
+        emailMatches.push({ sourceEmailId: emailDoc._id });
+        emailMatches.push({ "investigation.relatedEmails": emailDoc._id });
+      }
+
+      if (emailMatches.length > 0) {
+        andFilters.push({ $or: emailMatches });
+      } else {
+        // Provided an emailId that doesn't exist anywhere
+        andFilters.push({ _id: null });
+      }
     }
 
-    // Filter by case ID (supports both sourceCaseId and investigation.relatedCases)
+    // Filter by case ID (supports MongoDB _id or Case document reference)
     if (caseId) {
-      filter.$or = [
-        { sourceCaseId: caseId },
-        { "investigation.relatedCases": caseId },
-      ];
+      const caseMatches = [];
+
+      if (mongoose.Types.ObjectId.isValid(caseId)) {
+        const objId = new mongoose.Types.ObjectId(caseId);
+        caseMatches.push({ sourceCaseId: objId });
+        caseMatches.push({ "investigation.relatedCases": objId });
+      }
+
+      // Also check if case exists in Case collection (e.g. by _id or custom id if applicable)
+      const caseDoc = await Case.findOne({
+        ...(mongoose.Types.ObjectId.isValid(caseId) ? { _id: caseId } : { _id: null }),
+      }).select("_id");
+
+      if (caseDoc) {
+        caseMatches.push({ sourceCaseId: caseDoc._id });
+        caseMatches.push({ "investigation.relatedCases": caseDoc._id });
+      }
+
+      if (caseMatches.length > 0) {
+        andFilters.push({ $or: caseMatches });
+      } else {
+        // Provided a caseId that doesn't exist or is invalid format
+        andFilters.push({ _id: null });
+      }
+    }
+
+    if (andFilters.length > 0) {
+      filter.$and = andFilters;
     }
 
     const pageNum  = Math.max(parseInt(page)  || 1,  1);

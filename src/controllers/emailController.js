@@ -122,6 +122,9 @@ exports.createEmail = async (req, res, next) => {
   try {
     const email = await Email.create(req.body);
 
+    // Save extracted IOCs if present in JSON payload
+    await saveExtractedIOCs(req.body, email._id);
+
     res.status(201).json({
       success: true,
       message: "Email stored successfully",

@@ -239,6 +239,7 @@ exports.updateCase = async (req, res, next) => {
       await IOC.updateMany(
         { _id: { $in: updates.iocIds } },
         {
+          $set: { sourceCaseId: updatedCase._id },
           $addToSet: { "investigation.relatedCases": updatedCase._id },
         }
       );
