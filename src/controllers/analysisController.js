@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Analysis = require("../models/Analysis");
 const Email = require("../models/Email");
+const Case = require("../models/Case");
+const IOC = require("../models/IOC");
 
 const VALID_CLASSIFICATIONS = [
   "safe",
@@ -193,10 +195,78 @@ exports.createAnalysis = async (req, res, next) => {
       threatAnalysisId: analysis._id,
     });
 
+    // ── Automatic Case creation ──────────────────────────────────────
+    // Only create a Case if one doesn't already exist for this email
+    let autoCase = null;
+    try {
+      const existingCase = await Case.findOne({ emailIds: emailDoc._id });
+      if (!existingCase) {
+        // Gather IOC IDs linked to this email
+        const relatedIOCs = await IOC.find({
+          $or: [
+            { sourceEmailId: emailDoc._id },
+            { "investigation.relatedEmails": emailDoc._id },
+          ],
+        }).select("_id");
+        const iocIds = relatedIOCs.map((ioc) => ioc._id);
+
+        // Build a human-readable title from the email subject + classification
+        const emailSubject = emailDoc.subject || emailDoc.email_id || "Unknown Email";
+        const classLabel = classification.charAt(0).toUpperCase() + classification.slice(1);
+        const caseTitle = `${classLabel} Alert: ${emailSubject}`;
+
+        // Map riskLevel to case priority
+        let casePriority = "medium";
+        const rl = (riskLevel || "").toLowerCase();
+        if (rl === "critical") casePriority = "critical";
+        else if (rl === "high") casePriority = "high";
+        else if (rl === "medium") casePriority = "medium";
+        else if (rl === "low") casePriority = "low";
+
+        // Create the case
+        autoCase = await Case.create({
+          title: caseTitle,
+          description: summary || `Auto-generated case for ${classLabel.toLowerCase()} email analysis.`,
+          status: "open",
+          priority: casePriority,
+          classification: classification.toLowerCase(),
+          threatScore: threatScore,
+          emailIds: [emailDoc._id],
+          iocIds: iocIds,
+          analysisIds: [analysis._id],
+          evidence: evidence || {},
+          aiSummary: summary || "",
+          recommendations: recs,
+        });
+
+        // Link the case back to the email
+        await Email.findByIdAndUpdate(emailDoc._id, {
+          caseId: autoCase._id,
+        });
+
+        // Link IOCs to the case
+        if (iocIds.length > 0) {
+          await IOC.updateMany(
+            { _id: { $in: iocIds } },
+            {
+              $set: { sourceCaseId: autoCase._id },
+              $addToSet: { "investigation.relatedCases": autoCase._id },
+            }
+          );
+        }
+      }
+    } catch (caseErr) {
+      // Log but don't fail the analysis response if case creation fails
+      console.error("Warning: Auto case creation failed:", caseErr.message);
+    }
+
     res.status(201).json({
       success: true,
       message: "Analysis saved successfully",
       data: analysis,
+      case: autoCase
+        ? { id: autoCase._id, title: autoCase.title, message: "Case auto-created" }
+        : undefined,
     });
   } catch (err) {
     next(err);
