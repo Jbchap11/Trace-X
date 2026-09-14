@@ -885,7 +885,32 @@
     }
 
     async function fetchIpGeolocation(ip) {
-      appendLog(`Querying global IP intelligence for <strong>${ip}</strong>...`, 'log-info');
+      appendLog(`Querying backend threat intelligence for <strong>${ip}</strong>...`, 'log-info');
+
+      try {
+        // Try backend API /api/iocs first
+        const backendRes = await fetch(`https://trace-x-io6z.onrender.com/api/iocs`);
+        if (backendRes.ok) {
+          const backendData = await backendRes.json();
+          const match = (backendData.data || []).find(i => i.value === ip || (i.geolocation && i.geolocation.latitude));
+          if (match && match.geolocation && match.geolocation.latitude) {
+            appendLog(`Backend threat match acquired: ${match.geolocation.latitude}, ${match.geolocation.longitude} (${match.geolocation.city})`, 'log-success');
+            return {
+              ip: match.value || ip,
+              lat: Number(match.geolocation.latitude),
+              lon: Number(match.geolocation.longitude),
+              city: match.geolocation.city || 'Unknown City',
+              region: match.geolocation.region || '',
+              country: match.geolocation.country || 'Unknown Country',
+              isp: match.geolocation.isp || 'Backend IOC Intelligence',
+              asn: 'N/A',
+              timezone: 'UTC'
+            };
+          }
+        }
+      } catch (e) {
+        appendLog(`Backend live endpoint check pending. Querying global IP intelligence...`, 'log-info');
+      }
 
       try {
         // Try primary API ip-api.com
